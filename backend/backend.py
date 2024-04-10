@@ -1,9 +1,11 @@
+import config
 from openai import OpenAI
+import json
 
 client = OpenAI()
 
 # The AI's chat history are stored here
-messages = []
+messages_list = []
 
 
 def start_simulation(actions, ais):
@@ -23,11 +25,47 @@ def start_simulation(actions, ais):
                         Personality:
                         {ai['personality']}"""
 
-        messages.append([{"role": "system", "content": systemMessage}])
+        messages_list.append([{"role": "system", "content": systemMessage}])
+        messages_list[ai["id"]].append({"role": "system", "content": startingPrompt})
 
-    run_ais()
+    actions = run_ais()
+
+    return actions
 
 
 def run_ais():
+    actions = []
+    for index, messages in enumerate(messages_list):
+        completion = client.chat.completions.create(
+            model=config.model,
+            max_tokens=config.max_tokens,
+            response_format={"type": "json_object"},
+            messages=messages,
+        )
+        responseStr = completion.choices[0].message.content
+        response = json.loads(responseStr)
+        actions.append({"id": index, "action": response["action"]})
+    return actions
 
-    pass
+
+test_actions = "Talk to someone, Find a place to sit, Find somewhere quiet"
+
+test_ais = [
+    {
+        "id": 0,
+        "name": "Joe",
+        "appearance": "A short, blonde man in his twenties",
+        "personality": "Extraverted and talkative",
+    },
+    {
+        "id": 1,
+        "name": "Jane",
+        "appearance": "A tall, brunette woman in her twenties",
+        "personality": "Intraverted and shy",
+    },
+]
+
+actions = start_simulation(test_actions, test_ais)
+
+for i in actions:
+    print(i)
