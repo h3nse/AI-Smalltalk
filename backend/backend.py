@@ -9,11 +9,6 @@ messages_list = []
 
 
 def start_simulation(actions, ais):
-    startingPrompt = f"""You enter a small party. 
-                    Pick one of the following actions, formatted as valid JSON in the form \"action\": [your chosen action]
-                    
-                    Available actions:
-                    {actions}"""
 
     # Add the customized system message for each ai
     for ai in ais:
@@ -24,6 +19,12 @@ def start_simulation(actions, ais):
 
                         Personality:
                         {ai['personality']}"""
+
+        startingPrompt = f"""You enter a small party. 
+                        Pick one of the following actions, formatted as valid JSON in the form \"action\": [your chosen action]
+                        
+                        Available actions:
+                        {actions}"""
 
         messages_list.append([{"role": "system", "content": systemMessage}])
         messages_list[ai["id"]].append({"role": "system", "content": startingPrompt})
@@ -55,13 +56,13 @@ test_ais = [
         "id": 0,
         "name": "Joe",
         "appearance": "A short, blonde man in his twenties",
-        "personality": "Extraverted and talkative",
+        "personality": "Extroverted and talkative",
     },
     {
         "id": 1,
         "name": "Jane",
         "appearance": "A tall, brunette woman in her twenties",
-        "personality": "Intraverted and shy",
+        "personality": "Introverted and shy",
     },
 ]
 
