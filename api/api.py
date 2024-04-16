@@ -7,7 +7,7 @@ app = Flask(__name__)
 @app.route("/simstart", methods=["POST"])
 async def start_simulation():
     json = request.json
-    aiActions = await backend.start_simulation(json["actions"], json["ais"])
+    aiActions = await backend.start_simulation(json["ais"], json["actions"])
     return jsonify(aiActions)
 
 
