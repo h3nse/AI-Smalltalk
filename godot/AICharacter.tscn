@@ -1,18 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://dtxp6pn3yese4"]
+[gd_scene load_steps=3 format=3 uid="uid://dtxp6pn3yese4"]
 
 [ext_resource type="Script" path="res://AIMovement.gd" id="1_d6nuc"]
 [ext_resource type="Texture2D" uid="uid://bfjnsp4gufyil" path="res://icon.svg" id="2_57dyg"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_x0x55"]
-size = Vector2(128, 128)
-
-[node name="AICharacter" type="Node2D"]
-
-[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
+[node name="CharacterBody2D" type="CharacterBody2D"]
 script = ExtResource("1_d6nuc")
 
-[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D"]
+[node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_57dyg")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
-shape = SubResource("RectangleShape2D_x0x55")
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -59.0
+offset_top = -95.0
+offset_right = 58.0
+offset_bottom = -67.0
+horizontal_alignment = 1

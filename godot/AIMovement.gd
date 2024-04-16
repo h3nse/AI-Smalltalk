@@ -1,11 +1,16 @@
 extends CharacterBody2D
 
 @export var speed = 350
+@export var AIname = ""
+@export var appearance = ""
+@export var personality = ""
+var ID = 0
 
 var target 
 
 func _ready():
 	target = global_position
+	$NameLabel.text = AIname
 
 func _input(event):
    # Mouse in viewport coordinates.
