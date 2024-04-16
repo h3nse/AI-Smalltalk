@@ -10,3 +10,13 @@ position = Vector2(585, 333)
 
 [node name="AICharacter" parent="." instance=ExtResource("2_hbots")]
 position = Vector2(934, 340)
+AIname = "Henrik"
+appearance = "Rød"
+personality = "Klogeåge"
+
+[node name="CharacterBody2D" parent="." instance=ExtResource("2_hbots")]
+position = Vector2(827, 108)
+speed = 300
+AIname = "Hans"
+appearance = "Grim"
+personality = "Dum, fed"
