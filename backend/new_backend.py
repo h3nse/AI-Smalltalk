@@ -7,7 +7,8 @@ client = OpenAI()
 
 
 def start_simulation(ais, actions):
-    # Create database
+    # Reset database
+    reset_databases()
     create_databases()
 
     # For each ai:
@@ -32,14 +33,24 @@ def start_simulation(ais, actions):
                         Available actions:
                         {actions}"""
 
-        prompt_ai(ai["id"], startingPrompt)
+        prompt_ai(ai["id"], "system", startingPrompt)
 
 
-def prompt_ai(ai_id, prompt):
-    systemMessage = select_system_message(ai_id)
-    print(systemMessage)
+def prompt_ai(ai_id: int, prompt_role: str, prompt: str):
     # Generate message history
+    messages = []
+    systemMessage = select_system_message(ai_id)
+    chatHistory = select_messages(ai_id)
+
+    messages.append({"role": "system", "content": systemMessage})
+    for chat in chatHistory:
+        messages.append({"role": chat[0], "content": chat[1]})
+        messages.append({"role": "assistant", "content": chat[2]})
+
     # Add the prompt to the messages
+    messages.append({"role": prompt_role, "content": prompt})
+
+    print(messages)
     # Quiry the AI
     # Save the prompt and response to the db
     # Return the response
