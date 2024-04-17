@@ -12,14 +12,6 @@ position = Vector2(585, 333)
 
 [node name="AICharacter" parent="." instance=ExtResource("2_hbots")]
 position = Vector2(941, 213)
-AIname = "Hans"
-appearance = "Tall"
-personality = "Stupid"
 
 [node name="AICharacter2" parent="." instance=ExtResource("2_hbots")]
 position = Vector2(227, 465)
-AIname = "Greta"
-appearance = "Short"
-personality = "Smart"
-
-[node name="HTTPRequest" type="HTTPRequest" parent="."]
