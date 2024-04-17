@@ -21,10 +21,10 @@ def start_simulation(ais, actions):
         insert_ai(ai["id"], ai["name"], ai["appearance"], ai["personality"])
 
         startingPrompt = f"""You enter a small party. 
-                        Pick one of the following actions, formatted as valid JSON in the form \"action\": [your chosen action]
-                        
-                        Available actions:
-                        {actions}"""
+Pick one of the following actions, formatted as valid JSON in the form \"action\": \"your chosen action\"
+
+Available actions:
+{actions}"""
 
         response = prompt_ai(ai["id"], "system", startingPrompt, True)
         responses.append(response)
@@ -38,18 +38,23 @@ def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
     # Generate message history
     messages = []
     systemMessageContent = select_system_message_content(ai_id)
-    systemMessage = config.get_system_message(name=systemMessageContent[0], appearance=systemMessageContent[1], personality=systemMessageContent[2])
+    systemMessage = f"""You are roleplaying as a character named {systemMessageContent[0]} with these traits:
+Appearance:
+{systemMessageContent[1]}
+Personality:
+{systemMessageContent[2]}"""
+    
     messageHistory = generate_message_history(ai_id)
 
     messages.append({"role": "system", "content": systemMessage})
     for message in messageHistory:
-        messages.append({"role": message[0], "content": message[1][0]})
-        messages.append({"role": "assistant", "content": message[2][0]})
+        messages.append({"role": message[0], "content": message[1]})
+        messages.append({"role": "assistant", "content": message[2]})
 
     # Add the prompt to the messages
     messages.append({"role": prompt_role, "content": prompt})
 
-    print("-----Messages-----")
+    print(f"-----AI{ai_id} MESSAGE HISTORY-----")
     print(messages)
 
     # Quiry the AI
@@ -80,10 +85,27 @@ def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
 def generate_message_history(ai_id):
     # Make a request to the db for the system message and messages related with the ai
     messageHistory = select_messages(ai_id)
-    # If the message history is too long, shorten it.
+
+    # TODO: If the message history is too long, shorten it.
+
     # Return the message history
     return messageHistory
 
+def start_conversation(approacherId:int, recipientId:int):
+    # Prompt approacher with the appearance of the recipient
+    systemMessageContent = select_system_message_content(recipientId)
+    recipientAppearance = systemMessageContent[1]
+    prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
+    response = prompt_ai(approacherId, "system", prompt, False)
+
+    # Prompt the approachers opening message, along with their appearance, to the recipient
+    systemMessageContent = select_system_message_content(approacherId)
+    approacherAppearance = systemMessageContent[1]
+    prompt = f"You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: {response}. What do you reply?"
+    response = prompt_ai(recipientId, "system", prompt, False)
+    print(response)
+    
+    # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached 
 
 test_ais = [
     {
@@ -103,10 +125,4 @@ test_ais = [
 test_actions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
 
 start_simulation(test_ais, str(test_actions))
-
-
-def start_conversation(approacherId:int, recipientId:int):
-    # Prompt approacher with the appearance of the recipient
-    # Prompt the approachers opening message, along with their appearance, to the recipient
-    # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached 
-    pass
+start_conversation(0, 1)
