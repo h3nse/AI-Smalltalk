@@ -10,7 +10,8 @@ var target
 
 func _ready():
 	target = global_position
-	$NameLabel.text = AIname
+	$NameLabel.text = str(ID)
+	add_to_group("Bots")
 
 func _input(event):
    # Mouse in viewport coordinates.
@@ -24,3 +25,4 @@ func _physics_process(delta):
 	# look_at(target)
 	if global_position.distance_to(target) > 10:
 		move_and_slide()
+	$NameLabel.text = str(ID)
