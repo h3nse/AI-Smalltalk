@@ -16,6 +16,7 @@ def start_simulation(ais, actions):
     #   - Save the system message in the db
     #   - Create a starting prompt
     #   - Run prompt_ai
+    responses = []
     for ai in ais:
         systemMessage = f"""You are roleplaying as a character named {ai['name']} with these traits:
 
@@ -33,27 +34,56 @@ def start_simulation(ais, actions):
                         Available actions:
                         {actions}"""
 
-        prompt_ai(ai["id"], "system", startingPrompt)
+        response = prompt_ai(ai["id"], "system", startingPrompt, True)
+        responses.append(response)
+
+    print("-----Responses-----")
+    print(responses)
 
 
-def prompt_ai(ai_id: int, prompt_role: str, prompt: str):
+def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
     # Generate message history
     messages = []
     systemMessage = select_system_message(ai_id)
     chatHistory = select_messages(ai_id)
 
-    messages.append({"role": "system", "content": systemMessage})
+    messages.append({"role": "system", "content": systemMessage[0]})
     for chat in chatHistory:
-        messages.append({"role": chat[0], "content": chat[1]})
-        messages.append({"role": "assistant", "content": chat[2]})
+        messages.append({"role": chat[0], "content": chat[1][0]})
+        messages.append({"role": "assistant", "content": chat[2][0]})
 
     # Add the prompt to the messages
     messages.append({"role": prompt_role, "content": prompt})
 
+    print("-----Messages-----")
     print(messages)
+
     # Quiry the AI
+    if isAction:
+        completion = client.chat.completions.create(
+            model=config.model,
+            max_tokens=config.max_tokens,
+            response_format={"type": "json_object"},
+            messages=messages,
+        )
+        responseStr = completion.choices[0].message.content
+        jsonResponse = json.loads(responseStr)
+        response = {"id": ai_id, "action": jsonResponse["action"]}
+        insert_message(ai_id, prompt_role, prompt, f"I choose to {jsonResponse["action"]}")
+    else:
+        completion = client.chat.completions.create(
+            model=config.model,
+            max_tokens=config.max_tokens,
+            messages=messages,
+        )
+        response = completion.choices[0].message.content
+        insert_message(ai_id, prompt_role, prompt, response)
+
     # Save the prompt and response to the db
+    chatHistory = select_messages(ai_id)
+
     # Return the response
+    return response
 
 
 def generate_message_history(ai):
