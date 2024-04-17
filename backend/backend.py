@@ -1,16 +1,22 @@
-import config
+from backend import config
+from backend.db_functions import *
 from openai import OpenAI
 import json
 
 client = OpenAI()
 
-# The AI's chat history are stored here
-messages_list = []
 
+def start_simulation(ais, actions):
+    # Reset database
+    reset_databases()
+    create_databases()
 
-def start_simulation(actions, ais):
-
-    # Add the customized system message for each ai
+    # For each ai:
+    #   - Create a system message
+    #   - Save the system message in the db
+    #   - Create a starting prompt
+    #   - Run prompt_ai
+    responses = []
     for ai in ais:
         systemMessage = f"""You are roleplaying as a character named {ai['name']} with these traits:
 
@@ -20,23 +26,41 @@ def start_simulation(actions, ais):
                         Personality:
                         {ai['personality']}"""
 
+        insert_ai(ai["id"], systemMessage)
+
         startingPrompt = f"""You enter a small party. 
                         Pick one of the following actions, formatted as valid JSON in the form \"action\": [your chosen action]
                         
                         Available actions:
                         {actions}"""
 
-        messages_list.append([{"role": "system", "content": systemMessage}])
-        messages_list[ai["id"]].append({"role": "system", "content": startingPrompt})
+        response = prompt_ai(ai["id"], "system", startingPrompt, True)
+        responses.append(response)
 
-    actions = run_ais()
+    print("-----Responses-----")
+    print(responses)
+    return responses
 
-    return actions
 
+def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
+    # Generate message history
+    messages = []
+    systemMessage = select_system_message(ai_id)
+    messageHistory = generate_message_history(ai_id)
 
-def run_ais():
-    actions = []
-    for index, messages in enumerate(messages_list):
+    messages.append({"role": "system", "content": systemMessage[0]})
+    for message in messageHistory:
+        messages.append({"role": message[0], "content": message[1][0]})
+        messages.append({"role": "assistant", "content": message[2][0]})
+
+    # Add the prompt to the messages
+    messages.append({"role": prompt_role, "content": prompt})
+
+    print("-----Messages-----")
+    print(messages)
+
+    # Quiry the AI
+    if isAction:
         completion = client.chat.completions.create(
             model=config.model,
             max_tokens=config.max_tokens,
@@ -44,29 +68,45 @@ def run_ais():
             messages=messages,
         )
         responseStr = completion.choices[0].message.content
-        response = json.loads(responseStr)
-        actions.append({"id": index, "action": response["action"]})
-    return actions
+        jsonResponse = json.loads(responseStr)
+        response = {"id": ai_id, "action": jsonResponse["action"]}
+        insert_message(ai_id, prompt_role, prompt, f"I choose to {jsonResponse["action"]}")
+    else:
+        completion = client.chat.completions.create(
+            model=config.model,
+            max_tokens=config.max_tokens,
+            messages=messages,
+        )
+        response = completion.choices[0].message.content
+        insert_message(ai_id, prompt_role, prompt, response)
+
+    # Return the response
+    return response
 
 
-test_actions = "Talk to someone, Find a place to sit, Find somewhere quiet"
+def generate_message_history(ai_id):
+    # Make a request to the db for the system message and messages related with the ai
+    messageHistory = select_messages(ai_id)
+    # If the message history is too long, shorten it.
+    # Return the message history
+    return messageHistory
 
-test_ais = [
-    {
-        "id": 0,
-        "name": "Joe",
-        "appearance": "A short, blonde man in his twenties",
-        "personality": "Extroverted and talkative",
-    },
-    {
-        "id": 1,
-        "name": "Jane",
-        "appearance": "A tall, brunette woman in her twenties",
-        "personality": "Introverted and shy",
-    },
-]
 
-actions = start_simulation(test_actions, test_ais)
+# test_ais = [
+#     {
+#         "id": 0,
+#         "name": "Joe",
+#         "appearance": "A short, blonde man in his twenties",
+#         "personality": "Extroverted and talkative",
+#     },
+#     {
+#         "id": 1,
+#         "name": "Jane",
+#         "appearance": "A tall, brunette woman in her twenties",
+#         "personality": "Introverted and shy",
+#     },
+# ]
 
-for i in actions:
-    print(i)
+# test_actions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
+
+# start_simulation(test_ais, str(test_actions))
