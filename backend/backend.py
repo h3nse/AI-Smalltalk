@@ -1,5 +1,5 @@
-import config
-from db_functions import *
+from backend import config
+from backend.db_functions import *
 from openai import OpenAI
 import json
 
@@ -46,12 +46,12 @@ def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
     # Generate message history
     messages = []
     systemMessage = select_system_message(ai_id)
-    chatHistory = select_messages(ai_id)
+    messageHistory = generate_message_history(ai_id)
 
     messages.append({"role": "system", "content": systemMessage[0]})
-    for chat in chatHistory:
-        messages.append({"role": chat[0], "content": chat[1][0]})
-        messages.append({"role": "assistant", "content": chat[2][0]})
+    for message in messageHistory:
+        messages.append({"role": message[0], "content": message[1][0]})
+        messages.append({"role": "assistant", "content": message[2][0]})
 
     # Add the prompt to the messages
     messages.append({"role": prompt_role, "content": prompt})
@@ -84,28 +84,29 @@ def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
     return response
 
 
-def generate_message_history(ai):
+def generate_message_history(ai_id):
     # Make a request to the db for the system message and messages related with the ai
+    messageHistory = select_messages(ai_id)
     # If the message history is too long, shorten it.
     # Return the message history
-    pass
+    return messageHistory
 
 
-test_ais = [
-    {
-        "id": 0,
-        "name": "Joe",
-        "appearance": "A short, blonde man in his twenties",
-        "personality": "Extroverted and talkative",
-    },
-    {
-        "id": 1,
-        "name": "Jane",
-        "appearance": "A tall, brunette woman in her twenties",
-        "personality": "Introverted and shy",
-    },
-]
+# test_ais = [
+#     {
+#         "id": 0,
+#         "name": "Joe",
+#         "appearance": "A short, blonde man in his twenties",
+#         "personality": "Extroverted and talkative",
+#     },
+#     {
+#         "id": 1,
+#         "name": "Jane",
+#         "appearance": "A tall, brunette woman in her twenties",
+#         "personality": "Introverted and shy",
+#     },
+# ]
 
-test_actions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
+# test_actions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
 
-start_simulation(test_ais, str(test_actions))
+# start_simulation(test_ais, str(test_actions))
