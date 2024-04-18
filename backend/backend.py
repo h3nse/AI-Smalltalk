@@ -30,8 +30,6 @@ Available actions:
         response = prompt_ai(ai["id"], "system", startingPrompt, True)
         responses.append(response)
 
-    print(responses)
-
     return responses
 
 
@@ -47,16 +45,12 @@ Personality:
 
     messageHistory = generate_message_history(ai_id)
 
-    print(f"-----AI{ai_id} MESSAGE HISTORY-----")
     messages.append({"role": "system", "content": systemMessage})
-    print(f"system: {systemMessage}\n")
     for message in messageHistory:
         messages.append({"role": message[0], "content": message[1]})
-        print(f"{message[0]}: {message[1]}\n")
 
     # Add the prompt to the messages
     messages.append({"role": prompt_role, "content": prompt})
-    print(f"{prompt_role}: {prompt}\n")
 
     # Quiry the AI
     if isAction:
@@ -114,10 +108,10 @@ def start_conversation(approacherId: int, recipientId: int):
         # TODO: Add a way to end the conversation
 
         # Give responses back and forth
-        sleep(3)
         response1 = prompt_ai(approacherId, "user", response2, False)
-        sleep(3)
+        sleep(len(response1) * config.message_wait_time_multiplier)
         response2 = prompt_ai(recipientId, "user", response1, False)
+        sleep(len(response1) * config.message_wait_time_multiplier)
 
         # Check if conversation is coming to a close
         systemMessage = f"""You are an AI part of a larger system, where a conversation is being simulated. 
@@ -128,8 +122,6 @@ def start_conversation(approacherId: int, recipientId: int):
         {approacherSystemMessageContent[0]}: {response1} 
         {recipientSystemMessageContent[0]}: {response2}
         """
-
-        print(systemMessage)
 
         messages = []
         messages.append({"role": "system", "content": systemMessage})
