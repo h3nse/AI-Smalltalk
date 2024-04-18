@@ -2,6 +2,7 @@ import config
 from db_functions import *
 from openai import OpenAI
 import json
+from time import sleep
 
 client = OpenAI()
 
@@ -81,6 +82,7 @@ Personality:
         insert_message(ai_id, "assistant", response)
 
     # Return the response
+    print(f"assistant: {response}")
     return response
 
 
@@ -100,16 +102,18 @@ def start_conversation(approacherId: int, recipientId: int):
     recipientAppearance = systemMessageContent[1]
     prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
     response = prompt_ai(approacherId, "system", prompt, False)
-    print(f"response: {response}")
 
     # Prompt the approachers opening message, along with their appearance, to the recipient
     systemMessageContent = select_system_message_content(approacherId)
     approacherAppearance = systemMessageContent[1]
     prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response}". Your reply: '
     response = prompt_ai(recipientId, "system", prompt, False)
-    print(f"response: {response}")
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
+    while True:
+        sleep(3)
+        response = prompt_ai(approacherId, "user", response, False)
+        response = prompt_ai(recipientId, "user", response, False)
 
 
 test_ais = [
