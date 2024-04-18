@@ -104,8 +104,10 @@ def start_conversation(approacherId: int, recipientId: int):
     response2 = prompt_ai(recipientId, "system", prompt, False)
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
-    while True:
-        # TODO: Add a way to end the conversation
+    for i in range(config.max_conversation_iterations):
+        if i == config.max_conversation_iterations - 1:
+            response2 += "(System note: Please end conversation soon)"
+            print("(System note: Please end conversation soon)")
 
         # Give responses back and forth
         response1 = prompt_ai(approacherId, "user", response2, False)
@@ -139,6 +141,7 @@ def start_conversation(approacherId: int, recipientId: int):
         if endConversation:
             print("Ending conversation")
             break
+    print("Conversation ended")
 
 
 test_ais = [
