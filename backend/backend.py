@@ -28,7 +28,7 @@ Available actions:
 
         response = prompt_ai(ai["id"], "system", startingPrompt, True)
         responses.append(response)
-    
+
     print(responses)
 
     return responses
@@ -38,24 +38,24 @@ def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
     # Generate message history
     messages = []
     systemMessageContent = select_system_message_content(ai_id)
-    systemMessage = f"""You are roleplaying as a character named {systemMessageContent[0]} with these traits:
+    systemMessage = f"""You are roleplaying as a character at a party named {systemMessageContent[0]} with these traits:
 Appearance:
 {systemMessageContent[1]}
 Personality:
 {systemMessageContent[2]}"""
-    
+
     messageHistory = generate_message_history(ai_id)
 
+    print(f"-----AI{ai_id} MESSAGE HISTORY-----")
     messages.append({"role": "system", "content": systemMessage})
+    print(f"system: {systemMessage}\n")
     for message in messageHistory:
         messages.append({"role": message[0], "content": message[1]})
-        messages.append({"role": "assistant", "content": message[2]})
+        print(f"{message[0]}: {message[1]}\n")
 
     # Add the prompt to the messages
     messages.append({"role": prompt_role, "content": prompt})
-
-    print(f"-----AI{ai_id} MESSAGE HISTORY-----")
-    print(messages)
+    print(f"{prompt_role}: {prompt}\n")
 
     # Quiry the AI
     if isAction:
@@ -67,8 +67,9 @@ Personality:
         )
         responseStr = completion.choices[0].message.content
         jsonResponse = json.loads(responseStr)
-        response = {"id": ai_id, "action": jsonResponse["action"]}
-        insert_message(ai_id, prompt_role, prompt, f"I choose to {jsonResponse["action"]}")
+        action = jsonResponse["action"]
+        insert_message(ai_id, "system", f"You choose to {action}")
+        response = {"id": ai_id, "action": action}
     else:
         completion = client.chat.completions.create(
             model=config.model,
@@ -76,7 +77,8 @@ Personality:
             messages=messages,
         )
         response = completion.choices[0].message.content
-        insert_message(ai_id, prompt_role, prompt, response)
+        insert_message(ai_id, prompt_role, prompt)
+        insert_message(ai_id, "assistant", response)
 
     # Return the response
     return response
@@ -91,21 +93,24 @@ def generate_message_history(ai_id):
     # Return the message history
     return messageHistory
 
-def start_conversation(approacherId:int, recipientId:int):
+
+def start_conversation(approacherId: int, recipientId: int):
     # Prompt approacher with the appearance of the recipient
     systemMessageContent = select_system_message_content(recipientId)
     recipientAppearance = systemMessageContent[1]
     prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
     response = prompt_ai(approacherId, "system", prompt, False)
+    print(f"response: {response}")
 
     # Prompt the approachers opening message, along with their appearance, to the recipient
     systemMessageContent = select_system_message_content(approacherId)
     approacherAppearance = systemMessageContent[1]
-    prompt = f"You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: {response}. What do you reply?"
+    prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response}". Your reply: '
     response = prompt_ai(recipientId, "system", prompt, False)
-    print(response)
-    
-    # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached 
+    print(f"response: {response}")
+
+    # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
+
 
 test_ais = [
     {

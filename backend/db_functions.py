@@ -7,7 +7,7 @@ def create_databases():
         cur = con.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS ais(id, name, appearance, personality)")
         cur.execute(
-            "CREATE TABLE IF NOT EXISTS messages(id integer primary key autoincrement, ai_id, time_sent, prompt_role, prompt, response)"
+            "CREATE TABLE IF NOT EXISTS messages(id integer primary key autoincrement, ai_id, time_sent, role, content)"
         )
 
 
@@ -16,6 +16,7 @@ def reset_databases():
         cur = con.cursor()
         cur.execute("DELETE FROM ais")
         cur.execute("DELETE FROM messages")
+        cur.execute("DROP TABLE messages")
 
 
 def insert_ai(id: int, name: str, appearance: str, personality: str):
@@ -34,12 +35,12 @@ def select_system_message_content(ai_id: int):
         return res.fetchone()
 
 
-def insert_message(ai_id: int, prompt_role: str, prompt: str, response: str):
+def insert_message(ai_id: int, role: str, content):
     with connect("ai_messages.db") as con:
         cur = con.cursor()
-        params = (ai_id, time(), prompt_role, prompt, response)
+        params = (ai_id, time(), role, content)
         cur.execute(
-            "INSERT INTO messages(ai_id, time_sent, prompt_role, prompt, response) VALUES(?, ?, ?, ?, ?)",
+            "INSERT INTO messages(ai_id, time_sent, role, content) VALUES(?, ?, ?, ?)",
             params,
         )
 
@@ -48,7 +49,7 @@ def select_messages(ai_id: int):
     with connect("ai_messages.db") as con:
         cur = con.cursor()
         res = cur.execute(
-            "SELECT prompt_role, prompt, response FROM messages WHERE ai_id=? ORDER BY time_sent",
+            "SELECT role, content FROM messages WHERE ai_id=? ORDER BY time_sent",
             (ai_id,),
         )
         return res.fetchall()
