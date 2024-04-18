@@ -98,23 +98,55 @@ def generate_message_history(ai_id):
 
 def start_conversation(approacherId: int, recipientId: int):
     # Prompt approacher with the appearance of the recipient
-    systemMessageContent = select_system_message_content(recipientId)
-    recipientAppearance = systemMessageContent[1]
+    recipientSystemMessageContent = select_system_message_content(recipientId)
+    recipientAppearance = recipientSystemMessageContent[1]
     prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
-    response = prompt_ai(approacherId, "system", prompt, False)
+    response1 = prompt_ai(approacherId, "system", prompt, False)
 
     # Prompt the approachers opening message, along with their appearance, to the recipient
-    systemMessageContent = select_system_message_content(approacherId)
-    approacherAppearance = systemMessageContent[1]
-    prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response}". Your reply: '
-    response = prompt_ai(recipientId, "system", prompt, False)
+    approacherSystemMessageContent = select_system_message_content(approacherId)
+    approacherAppearance = approacherSystemMessageContent[1]
+    prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response1}". Your reply: '
+    response2 = prompt_ai(recipientId, "system", prompt, False)
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
     while True:
+        # TODO: Add a way to end the conversation
+
+        # Give responses back and forth
         sleep(3)
-        response = prompt_ai(approacherId, "user", response, False)
+        response1 = prompt_ai(approacherId, "user", response2, False)
         sleep(3)
-        response = prompt_ai(recipientId, "user", response, False)
+        response2 = prompt_ai(recipientId, "user", response1, False)
+
+        # Check if conversation is coming to a close
+        systemMessage = f"""You are an AI part of a larger system, where a conversation is being simulated. 
+        Your job is to detect when the conversation is ending naturally, so that the system can end the conversation. 
+        You will be given the last parts of a conversation, and will have to determine wether to end the conversation. 
+        Please reply in valid JSON in the format \"endConversation\": \"True/False\"
+        conversation:
+        {approacherSystemMessageContent[0]}: {response1} 
+        {recipientSystemMessageContent[0]}: {response2}
+        """
+
+        print(systemMessage)
+
+        messages = []
+        messages.append({"role": "system", "content": systemMessage})
+        completion = client.chat.completions.create(
+            model=config.model,
+            max_tokens=config.max_tokens,
+            response_format={"type": "json_object"},
+            messages=messages,
+        )
+        responseStr = completion.choices[0].message.content
+        jsonResponse = json.loads(responseStr)
+        print(jsonResponse)
+        endConversation = jsonResponse["endConversation"] == "True"
+
+        if endConversation:
+            print("Ending conversation")
+            break
 
 
 test_ais = [
