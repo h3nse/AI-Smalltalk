@@ -112,8 +112,8 @@ def start_conversation(approacherId: int, recipientId: int):
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
     while True:
         sleep(3)
-        response = prompt_ai(approacherId, "user", response, False)
-        response = prompt_ai(recipientId, "user", response, False)
+        response = prompt_ai(approacherId, "user", response + " Your reply: ", False)
+        response = prompt_ai(recipientId, "user", response + " Your reply: ", False)
 
 
 test_ais = [
