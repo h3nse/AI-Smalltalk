@@ -105,6 +105,7 @@ def start_conversation(approacherId: int, recipientId: int):
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
     for i in range(config.max_conversation_iterations):
+        # Tell the AIs to stop the conversation if they're getting close to the limit
         if i == config.max_conversation_iterations - 1:
             response2 += "(System note: Please end conversation soon)"
             print("(System note: Please end conversation soon)")
@@ -115,33 +116,33 @@ def start_conversation(approacherId: int, recipientId: int):
         response2 = prompt_ai(recipientId, "user", response1, False)
         sleep(len(response1) * config.message_wait_time_multiplier)
 
-        # Check if conversation is coming to a close
-        systemMessage = f"""You are an AI part of a larger system, where a conversation is being simulated. 
+        # Check if conversation should be ended
+        if check_conversation_end(response1, response2):
+            break
+    print("Conversation ended")
+
+
+def check_conversation_end(message1: str, message2: str) -> bool:
+    systemMessage = f"""You are an AI part of a larger system, where a conversation is being simulated. 
         Your job is to detect when the conversation is ending naturally, so that the system can end the conversation. 
         You will be given the last parts of a conversation, and will have to determine wether to end the conversation. 
         Please reply in valid JSON in the format \"endConversation\": \"True/False\"
         conversation:
-        {approacherSystemMessageContent[0]}: {response1} 
-        {recipientSystemMessageContent[0]}: {response2}
+        person 1: {message1} 
+        person 2: {message2}
         """
 
-        messages = []
-        messages.append({"role": "system", "content": systemMessage})
-        completion = client.chat.completions.create(
-            model=config.model,
-            max_tokens=config.max_tokens,
-            response_format={"type": "json_object"},
-            messages=messages,
-        )
-        responseStr = completion.choices[0].message.content
-        jsonResponse = json.loads(responseStr)
-        print(jsonResponse)
-        endConversation = jsonResponse["endConversation"] == "True"
-
-        if endConversation:
-            print("Ending conversation")
-            break
-    print("Conversation ended")
+    messages = []
+    messages.append({"role": "system", "content": systemMessage})
+    completion = client.chat.completions.create(
+        model=config.model,
+        max_tokens=config.max_tokens,
+        response_format={"type": "json_object"},
+        messages=messages,
+    )
+    responseStr = completion.choices[0].message.content
+    jsonResponse = json.loads(responseStr)
+    return jsonResponse["endConversation"] == "True"
 
 
 test_ais = [
