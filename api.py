@@ -8,13 +8,21 @@ app = Flask(__name__)
 def simstart():
     json = request.json
     aiActions = backend.start_simulation(json["ais"], json["actions"])
-    return jsonify(aiActions)
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    return jsonify(aiActions), 200
 
 
 @app.route("/convostart", methods=["POST"])
 def convostart():
-    pass
+    json = request.json
+    backend.start_conversation(json["approacherId"], json["recipientId"])
+    return "", 204
+
+
+@app.route("/poll", methods=["GET"])
+def poll():
+    updates = backend.read_updates()
+    return jsonify(updates), 200
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

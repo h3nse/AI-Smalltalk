@@ -1,12 +1,17 @@
-import config
-from db_functions import *
+from backend import config
+
+# import config
+
+from backend.db_functions import *
+
+# from db_functions import *
 from openai import OpenAI
 import json
 from time import sleep
 
 client = OpenAI()
 
-updates = {"messages": [], "endedConversations": []}
+_updates = {"messages": [], "endedConversations": []}
 
 
 def start_simulation(ais, actions):
@@ -93,19 +98,20 @@ def generate_message_history(aiId):
 
 
 def start_conversation(approacherId: int, recipientId: int):
+    global _updates
     # Prompt approacher with the appearance of the recipient
     recipientSystemMessageContent = select_system_message_content(recipientId)
     recipientAppearance = recipientSystemMessageContent[1]
     prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
     response1 = prompt_ai(approacherId, "system", prompt, False)
-    updates["messages"].append({"ai": approacherId, "content": response1})
+    _updates["messages"].append({"ai": approacherId, "content": response1})
 
     # Prompt the approachers opening message, along with their appearance, to the recipient
     approacherSystemMessageContent = select_system_message_content(approacherId)
     approacherAppearance = approacherSystemMessageContent[1]
     prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response1}". Your reply: '
     response2 = prompt_ai(recipientId, "system", prompt, False)
-    updates["messages"].append({"ai": recipientId, "content": response2})
+    _updates["messages"].append({"ai": recipientId, "content": response2})
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
     for i in range(config.MAX_CONVERSATION_ITERATIONS):
@@ -116,19 +122,19 @@ def start_conversation(approacherId: int, recipientId: int):
 
         # Give responses back and forth
         response1 = prompt_ai(approacherId, "user", response2, False)
-        updates["messages"].append({"ai": approacherId, "content": response1})
+        _updates["messages"].append({"ai": approacherId, "content": response1})
         sleep(len(response1) * config.MESSAGE_WAIT_MULTIPLIER)
 
         response2 = prompt_ai(recipientId, "user", response1, False)
-        updates["messages"].append({"ai": recipientId, "content": response2})
+        _updates["messages"].append({"ai": recipientId, "content": response2})
         sleep(len(response1) * config.MESSAGE_WAIT_MULTIPLIER)
 
         # Check if conversation should be ended
         if check_conversation_end(response1, response2):
-            updates["endedConversations"].append([approacherId, recipientId])
+            _updates["endedConversations"].append([approacherId, recipientId])
             break
     print("Conversation ended")
-    print(updates)
+    print(_updates)
 
 
 def check_conversation_end(message1: str, message2: str) -> bool:
@@ -155,26 +161,29 @@ def check_conversation_end(message1: str, message2: str) -> bool:
 
 
 def read_updates():
+    global _updates
     ### Returns the update variable and resets it
-    pass
+    returnUpdates = _updates.copy()
+    _updates = {"messages": [], "endedConversations": []}
+    return returnUpdates
 
 
-testAis = [
-    {
-        "id": 0,
-        "name": "Joe",
-        "appearance": "A short, blonde man in his twenties",
-        "personality": "Extroverted and talkative",
-    },
-    {
-        "id": 1,
-        "name": "Jane",
-        "appearance": "A tall, brunette woman in her twenties",
-        "personality": "Introverted and shy",
-    },
-]
+# testAis = [
+#     {
+#         "id": 0,
+#         "name": "Joe",
+#         "appearance": "A short, blonde man in his twenties",
+#         "personality": "Extroverted and talkative",
+#     },
+#     {
+#         "id": 1,
+#         "name": "Jane",
+#         "appearance": "A tall, brunette woman in her twenties",
+#         "personality": "Introverted and shy",
+#     },
+# ]
 
-testActions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
+# testActions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
 
-start_simulation(testAis, str(testActions))
-start_conversation(0, 1)
+# start_simulation(testAis, str(testActions))
+# start_conversation(0, 1)
