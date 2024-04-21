@@ -1,4 +1,4 @@
 model = "gpt-4-turbo"
-max_tokens = 200
-max_conversation_iterations = 10
-message_wait_time_multiplier = 0.03
+MAX_TOKENS = 200
+MAX_CONVERSATION_ITERATIONS = 4
+MESSAGE_WAIT_MULTIPLIER = 0.03

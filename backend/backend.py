@@ -6,6 +6,8 @@ from time import sleep
 
 client = OpenAI()
 
+updates = {"messages": [], "endedConversations": []}
+
 
 def start_simulation(ais, actions):
     # Reset database
@@ -33,56 +35,56 @@ Available actions:
     return responses
 
 
-def prompt_ai(ai_id: int, prompt_role: str, prompt: str, isAction: bool):
+def prompt_ai(aiId: int, promptRole: str, prompt: str, isAction: bool):
     # Generate message history
     messages = []
-    systemMessageContent = select_system_message_content(ai_id)
+    systemMessageContent = select_system_message_content(aiId)
     systemMessage = f"""You are roleplaying as a character at a party named {systemMessageContent[0]} with these traits:
 Appearance:
 {systemMessageContent[1]}
 Personality:
 {systemMessageContent[2]}"""
 
-    messageHistory = generate_message_history(ai_id)
+    messageHistory = generate_message_history(aiId)
 
     messages.append({"role": "system", "content": systemMessage})
     for message in messageHistory:
         messages.append({"role": message[0], "content": message[1]})
 
     # Add the prompt to the messages
-    messages.append({"role": prompt_role, "content": prompt})
+    messages.append({"role": promptRole, "content": prompt})
 
     # Quiry the AI
     if isAction:
         completion = client.chat.completions.create(
             model=config.model,
-            max_tokens=config.max_tokens,
+            max_tokens=config.MAX_TOKENS,
             response_format={"type": "json_object"},
             messages=messages,
         )
         responseStr = completion.choices[0].message.content
         jsonResponse = json.loads(responseStr)
         action = jsonResponse["action"]
-        insert_message(ai_id, "system", f"You choose to {action}")
-        response = {"id": ai_id, "action": action}
+        insert_message(aiId, "system", f"You choose to {action}")
+        response = {"id": aiId, "action": action}
     else:
         completion = client.chat.completions.create(
             model=config.model,
-            max_tokens=config.max_tokens,
+            max_tokens=config.MAX_TOKENS,
             messages=messages,
         )
         response = completion.choices[0].message.content
-        insert_message(ai_id, prompt_role, prompt)
-        insert_message(ai_id, "assistant", response)
+        insert_message(aiId, promptRole, prompt)
+        insert_message(aiId, "assistant", response)
 
     # Return the response
     print(f"assistant: {response}")
     return response
 
 
-def generate_message_history(ai_id):
+def generate_message_history(aiId):
     # Make a request to the db for the system message and messages related with the ai
-    messageHistory = select_messages(ai_id)
+    messageHistory = select_messages(aiId)
 
     # TODO: If the message history is too long, shorten it.
 
@@ -96,30 +98,37 @@ def start_conversation(approacherId: int, recipientId: int):
     recipientAppearance = recipientSystemMessageContent[1]
     prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
     response1 = prompt_ai(approacherId, "system", prompt, False)
+    updates["messages"].append({"ai": approacherId, "content": response1})
 
     # Prompt the approachers opening message, along with their appearance, to the recipient
     approacherSystemMessageContent = select_system_message_content(approacherId)
     approacherAppearance = approacherSystemMessageContent[1]
     prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response1}". Your reply: '
     response2 = prompt_ai(recipientId, "system", prompt, False)
+    updates["messages"].append({"ai": recipientId, "content": response2})
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
-    for i in range(config.max_conversation_iterations):
+    for i in range(config.MAX_CONVERSATION_ITERATIONS):
         # Tell the AIs to stop the conversation if they're getting close to the limit
-        if i == config.max_conversation_iterations - 1:
+        if i == config.MAX_CONVERSATION_ITERATIONS - 1:
             response2 += "(System note: Please end conversation soon)"
             print("(System note: Please end conversation soon)")
 
         # Give responses back and forth
         response1 = prompt_ai(approacherId, "user", response2, False)
-        sleep(len(response1) * config.message_wait_time_multiplier)
+        updates["messages"].append({"ai": approacherId, "content": response1})
+        sleep(len(response1) * config.MESSAGE_WAIT_MULTIPLIER)
+
         response2 = prompt_ai(recipientId, "user", response1, False)
-        sleep(len(response1) * config.message_wait_time_multiplier)
+        updates["messages"].append({"ai": recipientId, "content": response2})
+        sleep(len(response1) * config.MESSAGE_WAIT_MULTIPLIER)
 
         # Check if conversation should be ended
         if check_conversation_end(response1, response2):
+            updates["endedConversations"].append([approacherId, recipientId])
             break
     print("Conversation ended")
+    print(updates)
 
 
 def check_conversation_end(message1: str, message2: str) -> bool:
@@ -136,7 +145,7 @@ def check_conversation_end(message1: str, message2: str) -> bool:
     messages.append({"role": "system", "content": systemMessage})
     completion = client.chat.completions.create(
         model=config.model,
-        max_tokens=config.max_tokens,
+        max_tokens=config.MAX_TOKENS,
         response_format={"type": "json_object"},
         messages=messages,
     )
@@ -145,7 +154,12 @@ def check_conversation_end(message1: str, message2: str) -> bool:
     return jsonResponse["endConversation"] == "True"
 
 
-test_ais = [
+def read_updates():
+    ### Returns the update variable and resets it
+    pass
+
+
+testAis = [
     {
         "id": 0,
         "name": "Joe",
@@ -160,7 +174,7 @@ test_ais = [
     },
 ]
 
-test_actions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
+testActions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
 
-start_simulation(test_ais, str(test_actions))
+start_simulation(testAis, str(testActions))
 start_conversation(0, 1)
