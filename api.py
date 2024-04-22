@@ -24,5 +24,12 @@ def poll():
     return jsonify(updates), 200
 
 
+@app.route("/pick_action", methods=["POST"])
+def pick_action():
+    json = request.json
+    action = backend.action_prompt(json["id"], json["actions"])
+    return jsonify(action)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

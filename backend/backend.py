@@ -104,14 +104,14 @@ def start_conversation(approacherId: int, recipientId: int):
     recipientAppearance = recipientSystemMessageContent[1]
     prompt = f"You approach another party-goer with these physical traits: {recipientAppearance}. What do you say?"
     response1 = prompt_ai(approacherId, "system", prompt, False)
-    _updates["messages"].append({"ai": approacherId, "content": response1})
+    _updates["messages"].append({"id": approacherId, "content": response1})
 
     # Prompt the approachers opening message, along with their appearance, to the recipient
     approacherSystemMessageContent = select_system_message_content(approacherId)
     approacherAppearance = approacherSystemMessageContent[1]
     prompt = f'You get aproached by another party-goer with these physical traits: {approacherAppearance}. They start the conversation by saying: "{response1}". Your reply: '
     response2 = prompt_ai(recipientId, "system", prompt, False)
-    _updates["messages"].append({"ai": recipientId, "content": response2})
+    _updates["messages"].append({"id": recipientId, "content": response2})
 
     # Loop promptings back and forth, until the conversation is ended or the max amount of messages is reached
     for i in range(config.MAX_CONVERSATION_ITERATIONS):
@@ -122,11 +122,11 @@ def start_conversation(approacherId: int, recipientId: int):
 
         # Give responses back and forth
         response1 = prompt_ai(approacherId, "user", response2, False)
-        _updates["messages"].append({"ai": approacherId, "content": response1})
+        _updates["messages"].append({"id": approacherId, "content": response1})
         sleep(len(response1) * config.MESSAGE_WAIT_MULTIPLIER)
 
         response2 = prompt_ai(recipientId, "user", response1, False)
-        _updates["messages"].append({"ai": recipientId, "content": response2})
+        _updates["messages"].append({"id": recipientId, "content": response2})
         sleep(len(response1) * config.MESSAGE_WAIT_MULTIPLIER)
 
         # Check if conversation should be ended
@@ -168,22 +168,11 @@ def read_updates():
     return returnUpdates
 
 
-# testAis = [
-#     {
-#         "id": 0,
-#         "name": "Joe",
-#         "appearance": "A short, blonde man in his twenties",
-#         "personality": "Extroverted and talkative",
-#     },
-#     {
-#         "id": 1,
-#         "name": "Jane",
-#         "appearance": "A tall, brunette woman in her twenties",
-#         "personality": "Introverted and shy",
-#     },
-# ]
+def action_prompt(aiId: int, actions: list[str]):
+    prompt = f"""You decide to do something. 
+    Pick one of the following actions, formatted as valid JSON in the form \"action\": \"your chosen action\"
 
-# testActions = ["Talk to someone", "Find a place to sit", "Find somewhere quiet"]
-
-# start_simulation(testAis, str(testActions))
-# start_conversation(0, 1)
+    Available actions:
+    {actions}"""
+    response = prompt_ai(aiId, "system", prompt, True)
+    return response
