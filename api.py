@@ -31,5 +31,15 @@ def pick_action():
     return jsonify(action)
 
 
+@app.route("/message_history", methods=["POST"])
+def message_history():
+    json = request.json
+    messageHistory = backend.generate_message_history(json["id"])
+    messages = []
+    for message in messageHistory:
+        messages.append({"role": message[0], "content": message[1]})
+    return jsonify(messages)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

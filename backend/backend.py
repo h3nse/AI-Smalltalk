@@ -132,9 +132,11 @@ def start_conversation(approacherId: int, recipientId: int):
         # Check if conversation should be ended
         if check_conversation_end(response1, response2):
             _updates["endedConversations"].append([approacherId, recipientId])
+            insert_message(approacherId, "user", response2)
+            insert_message(approacherId, "system", "The conversation ends.")
+            insert_message(recipientId, "system", "The conversation ends.")
             break
     print("Conversation ended")
-    print(_updates)
 
 
 def check_conversation_end(message1: str, message2: str) -> bool:
