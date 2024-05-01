@@ -1,8 +1,10 @@
-# from backend import config
-import config
+from backend import config
 
-# from backend.db_functions import *
-from db_functions import *
+# import config
+
+from backend.db_functions import *
+
+# from db_functions import *
 from openai import OpenAI
 import json
 from time import sleep
