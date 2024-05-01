@@ -1,4 +1,6 @@
 from backend import backend
+import threading
+
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -14,8 +16,15 @@ def simstart():
 @app.route("/convostart", methods=["POST"])
 def convostart():
     json = request.json
-    backend.start_conversation(json["approacherId"], json["recipientId"])
-    return "", 204
+    try:
+        thread = threading.Thread(
+            target=backend.start_conversation,
+            args=(json["approacherId"], json["recipientId"]),
+        )
+        thread.start()
+        return "", 204
+    except Exception as error:
+        return str(error)
 
 
 @app.route("/poll", methods=["GET"])

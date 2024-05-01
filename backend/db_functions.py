@@ -16,7 +16,6 @@ def reset_databases():
         cur = con.cursor()
         cur.execute("DELETE FROM ais")
         cur.execute("DELETE FROM messages")
-        cur.execute("DROP TABLE messages")
 
 
 def insert_ai(id: int, name: str, appearance: str, personality: str):

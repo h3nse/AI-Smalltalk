@@ -1,10 +1,8 @@
-from backend import config
+# from backend import config
+import config
 
-# import config
-
-from backend.db_functions import *
-
-# from db_functions import *
+# from backend.db_functions import *
+from db_functions import *
 from openai import OpenAI
 import json
 from time import sleep
@@ -16,8 +14,8 @@ _updates = {"messages": [], "endedConversations": []}
 
 def start_simulation(ais, actions):
     # Reset database
-    reset_databases()
     create_databases()
+    reset_databases()
 
     # For each ai:
     #   - Create a system message
